@@ -7,7 +7,7 @@ import {
 
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { styles } from '../../styles';
+import { styles, tokens } from '../../styles';
 const ADMIN_CREDENTIALS = {
   email: 'admin@hrmate.com',
   password: 'adminPassword123'
@@ -61,61 +61,67 @@ const LoginForm = ({ onLoginSuccess, userType = 'employee' }) => {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    backgroundColor: '#F9FAFB',
-    fontFamily: '"Inter", sans-serif',
+    backgroundColor: tokens.colors.background,
+    backgroundImage: 'radial-gradient(circle at 20% 20%, #CCFBF1 0%, transparent 40%), radial-gradient(circle at 80% 80%, #F1F5F9 0%, transparent 40%)',
+    fontFamily: '"Funnel Display", sans-serif',
   };
 
   const formStyle = {
     width: '100%',
-    maxWidth: '400px',
-    backgroundColor: '#FFFFFF',
-    padding: '48px',
-    borderRadius: '16px',
-    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+    maxWidth: '440px',
+    backgroundColor: tokens.colors.white,
+    padding: '56px 48px',
+    borderRadius: tokens.radius.xl,
+    boxShadow: tokens.shadow.xl,
+    border: `1px solid ${tokens.colors.border}`,
   };
 
   const labelStyle = {
     display: 'block',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: '13px',
+    fontWeight: '700',
+    color: tokens.colors.primary,
     marginBottom: '8px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em'
   };
 
   const footerStyle = {
-    marginTop: '32px',
+    marginTop: '40px',
     textAlign: 'center',
-    fontSize: '13px',
-    color: '#6B7280',
+    fontSize: '12px',
+    color: tokens.colors.secondary,
+    lineHeight: '1.6'
   };
 
   return (
     <div style={containerStyle}>
       <form onSubmit={submit} style={formStyle} className="animate-fade">
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            background: '#111827',
-            borderRadius: '12px',
+            width: '56px',
+            height: '56px',
+            background: `linear-gradient(135deg, ${tokens.colors.accent} 0%, #065F46 100%)`,
+            borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px'
+            margin: '0 auto 20px',
+            boxShadow: '0 12px 24px -8px rgba(13, 148, 136, 0.4)'
           }}>
-            <span className="material-symbols-outlined" style={{ color: '#FFF', fontSize: '24px' }}>terminal</span>
+            <span className="material-symbols-outlined" style={{ color: '#FFF', fontSize: '28px' }}>bolt</span>
           </div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>HRM_SYS Login</h1>
-          <p style={{ color: '#6B7280', fontSize: '14px' }}>
-            {userType === 'admin' ? 'Administrator Authentication' : 'Secure Staff Gateway'}
+          <h1 style={{ fontSize: '28px', fontWeight: '800', color: tokens.colors.primary, marginBottom: '8px', letterSpacing: '-0.02em' }}>HRMate Login</h1>
+          <p style={{ color: tokens.colors.secondary, fontSize: '15px' }}>
+            {userType === 'admin' ? 'Administrative Gateway' : 'Global Workforce Entry'}
           </p>
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={labelStyle}>Email Address</label>
+        <div style={{ marginBottom: '24px' }}>
+          <label style={labelStyle}>Corporate Email</label>
           <input
             style={styles.input}
-            placeholder="name@company.com"
+            placeholder="name@hrmate.com"
             type="email"
             required
             value={email}
@@ -123,8 +129,8 @@ const LoginForm = ({ onLoginSuccess, userType = 'employee' }) => {
           />
         </div>
 
-        <div style={{ marginBottom: '32px' }}>
-          <label style={labelStyle}>Secure Password</label>
+        <div style={{ marginBottom: '40px' }}>
+          <label style={labelStyle}>Secure Passcode</label>
           <input
             style={styles.input}
             placeholder="••••••••"
@@ -135,11 +141,12 @@ const LoginForm = ({ onLoginSuccess, userType = 'employee' }) => {
           />
         </div>
 
-        <button style={{ ...styles.button.primary, width: '100%', justifyContent: 'center', padding: '12px' }} disabled={loading}>
-          {loading ? 'Authenticating...' : 'Sign In To System'}
+        <button style={{ ...styles.button.primary, width: '100%', height: '48px', fontSize: '15px' }} disabled={loading}>
+          {loading ? 'Authenticating...' : 'Establish Connection'}
         </button>
 
-        <div style={footerStyle}>
+        <div style={{ ...footerStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>lock</span>
           Restricted access. Authorized personnel only.
         </div>
       </form>

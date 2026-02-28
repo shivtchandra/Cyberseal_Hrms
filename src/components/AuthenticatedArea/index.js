@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { styles, tokens } from '../../styles';
+import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../Sidebar';
 import Dashboard from '../Dashboard';
 import Employees from '../Employees';
@@ -14,6 +15,7 @@ import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 
 const AuthenticatedArea = ({ user }) => {
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
@@ -25,12 +27,10 @@ const AuthenticatedArea = ({ user }) => {
   useEffect(() => {
     const checkProfile = async () => {
       if (isAdmin) return;
-      // If we logged in via Firestore, we might already have the data
       if (user.profileComplete === false) {
         setNeedsProfileSetup(true);
         setProfileData(user);
       } else {
-        // Double check Firestore for Auth users
         const docRef = doc(db, 'employees', user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().profileComplete === false) {
@@ -58,59 +58,51 @@ const AuthenticatedArea = ({ user }) => {
 
   if (needsProfileSetup) {
     return (
-      <div style={{ ...styles.app, background: tokens.colors.background, alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-        <div style={{ ...styles.card, width: '100%', maxWidth: '440px', padding: '40px' }}>
+      <div style={{ ...styles.app, background: tokens.colors.background, alignItems: 'center', justifyContent: 'center', padding: '24px', backgroundImage: 'radial-gradient(circle at 10% 10%, #CCFBF1 0%, transparent 30%)' }}>
+        <div style={{ ...styles.card, width: '100%', maxWidth: '440px', padding: '48px', boxShadow: tokens.shadow.xl }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-            <div style={{ fontSize: '24px', fontWeight: '800', color: tokens.colors.primary, marginBottom: '8px' }}>Complete Profile</div>
-            <p style={{ fontSize: '14px', color: tokens.colors.textMuted }}>Please provide a few more details to activate your account.</p>
+            <div style={{
+              width: '48px', height: '48px',
+              background: tokens.colors.accent + '10',
+              color: tokens.colors.accent,
+              borderRadius: '12px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px'
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>id_card</span>
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '800', color: tokens.colors.primary, marginBottom: '8px', letterSpacing: '-0.02em' }}>Finalize Identity</div>
+            <p style={{ fontSize: '14px', color: tokens.colors.secondary, lineHeight: '1.6' }}>Synchronize your professional record to activate your workspace access.</p>
           </div>
-
-          <form onSubmit={handleProfileComplete} style={{ display: 'grid', gap: '20px' }}>
+          <form onSubmit={handleProfileComplete} style={{ display: 'grid', gap: '24px' }}>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '600', color: tokens.colors.secondary, marginBottom: '6px', display: 'block' }}>Phone Number</label>
-              <input
-                style={styles.input}
-                required
-                value={profileData.phone || ''}
-                onChange={e => setProfileData({ ...profileData, phone: e.target.value })}
-                placeholder="+1 (555) 000-0000"
-              />
+              <label style={{ fontSize: '11px', fontWeight: '800', color: tokens.colors.secondary, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'block' }}>Phone Number</label>
+              <input style={styles.input} required value={profileData.phone || ''} onChange={e => setProfileData({ ...profileData, phone: e.target.value })} placeholder="+1 (555) 000-0000" />
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '600', color: tokens.colors.secondary, marginBottom: '6px', display: 'block' }}>Date of Birth</label>
-              <input
-                type="date"
-                style={styles.input}
-                required
-                value={profileData.dob || ''}
-                onChange={e => setProfileData({ ...profileData, dob: e.target.value })}
-              />
+              <label style={{ fontSize: '11px', fontWeight: '800', color: tokens.colors.secondary, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'block' }}>Date of Birth</label>
+              <input type="date" style={styles.input} required value={profileData.dob || ''} onChange={e => setProfileData({ ...profileData, dob: e.target.value })} />
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '600', color: tokens.colors.secondary, marginBottom: '6px', display: 'block' }}>Home Address</label>
-              <textarea
-                style={{ ...styles.input, minHeight: '100px', resize: 'none' }}
-                required
-                value={profileData.address || ''}
-                onChange={e => setProfileData({ ...profileData, address: e.target.value })}
-                placeholder="123 Main St, City, Country"
-              />
+              <label style={{ fontSize: '11px', fontWeight: '800', color: tokens.colors.secondary, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'block' }}>Home Address</label>
+              <textarea style={{ ...styles.input, minHeight: '100px', resize: 'none' }} required value={profileData.address || ''} onChange={e => setProfileData({ ...profileData, address: e.target.value })} placeholder="123 Main St, City, Country" />
             </div>
-            <button style={{ ...styles.button.primary, width: '100%', marginTop: '8px', justifyContent: 'center' }}>Activate Account</button>
+            <button style={{ ...styles.button.primary, width: '100%', padding: '14px', marginTop: '8px', fontSize: '15px' }}>Activate Workforce ID</button>
           </form>
         </div>
       </div>
     );
   }
 
-  const handleLogout = () => {
-    if (user.uid === 'hardcoded-admin') {
-      // For hardcoded users, we need to refresh or manually update App state
-      // Simplest is to reload or we could pass a logout prop
-      window.location.reload();
-    } else {
-      signOut(auth);
-    }
+  const handleLogout = async () => {
+    try {
+      // Sign out from Firebase Auth if it's a real auth session
+      if (user.uid !== 'hardcoded-admin') {
+        await signOut(auth);
+      }
+    } catch (_) { }
+    // Always clear sessionStorage via context logout
+    logout();
   };
 
   return (
@@ -118,24 +110,32 @@ const AuthenticatedArea = ({ user }) => {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isAdmin={isAdmin} />
 
       <div style={styles.main}>
-        <div style={styles.header}>
+        <div style={{ ...styles.header, paddingBottom: '32px', borderBottom: `1px solid ${tokens.colors.border}`, marginBottom: '40px' }}>
           <div>
-            <div style={{ color: tokens.colors.textMuted, fontSize: '13px', fontWeight: '600', letterSpacing: '0.02em', marginBottom: '2px' }}>
-              Welcome back, {isAdmin ? 'Administrator' : 'Staff Member'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: tokens.colors.secondary, fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '14px', color: tokens.colors.accent }}>meeting_room</span>
+              Instance: {user.email}
             </div>
-            <div style={styles.greeting}>{user.email.split('@')[0]}</div>
+            <div style={{ ...styles.greeting, fontSize: '32px' }}>{isAdmin ? 'System Administrator' : user.name || user.displayName || user.email.split('@')[0]}</div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {activeTab === 'employees' && (
               <div style={{ position: 'relative' }}>
                 <input
-                  style={{ ...styles.input, paddingLeft: '40px', width: '280px', backgroundColor: '#FFF', border: `1px solid ${tokens.colors.border}` }}
-                  placeholder="Search directory..."
+                  style={{
+                    ...styles.input,
+                    paddingLeft: '44px',
+                    width: '320px',
+                    backgroundColor: tokens.colors.white,
+                    border: `1px solid ${tokens.colors.border}`,
+                    boxShadow: tokens.shadow.sm
+                  }}
+                  placeholder="Global Workforce Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '20px', color: tokens.colors.textMuted }}>search</span>
+                <span className="material-symbols-outlined" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', color: tokens.colors.secondary }}>search</span>
               </div>
             )}
 
@@ -143,12 +143,19 @@ const AuthenticatedArea = ({ user }) => {
               onClick={handleLogout}
               style={{
                 ...styles.button.outline,
-                padding: '8px 16px',
+                padding: '10px 18px',
                 fontSize: '13px',
-                fontWeight: '600',
+                fontWeight: '700',
+                background: tokens.colors.white,
+                color: tokens.colors.error,
+                borderColor: '#FEE2E2',
+                transition: 'all 0.2s ease'
               }}
+              onMouseOver={e => { e.currentTarget.style.backgroundColor = '#FEF2F2'; e.currentTarget.style.borderColor = '#FCA5A5'; }}
+              onMouseOut={e => { e.currentTarget.style.backgroundColor = tokens.colors.white; e.currentTarget.style.borderColor = '#FEE2E2'; }}
             >
-              Log Out <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
+              Sign Out
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
             </button>
           </div>
         </div>

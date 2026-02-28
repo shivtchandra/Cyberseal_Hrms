@@ -1,24 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
 
-:root {
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --secondary: #64748b;
-  --accent: #FF634A;
-  --bg-main: #F8FAFC;
-  --bg-card: #FFFFFF;
-  --text-main: #0F172A;
-  --text-muted: #64748B;
-  --border: #E2E8F0;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+:root,
+[data-theme="light"] {
+  --color-primary: #0F172A;
+  --color-secondary: #64748B;
+  --color-accent: #0D9488;
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-white: #FFFFFF;
+  --color-card-bg: #FFFFFF;
+  --color-sidebar-bg: #FFFFFF;
+  --color-topbar-bg: #FFFFFF;
+  --color-input-bg: #F8FAFC;
+  --color-table-header: #F8FAFC;
+  --color-hover: #F9FAFB;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+}
+
+[data-theme="dark"] {
+  --color-primary: #F1F5F9;
+  --color-secondary: #94A3B8;
+  --color-accent: #2DD4BF;
+  --color-success: #34D399;
+  --color-error: #F87171;
+  --color-warning: #FBBF24;
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-border: #334155;
+  --color-white: #1E293B;
+  --color-card-bg: #1E293B;
+  --color-sidebar-bg: #0F172A;
+  --color-topbar-bg: #1E293B;
+  --color-input-bg: #0F172A;
+  --color-table-header: #0F172A;
+  --color-hover: #334155;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5);
 }
 
 * {
@@ -28,7 +55,7 @@
 }
 
 body {
-  font-family: 'Outfit', 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Funnel Display', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
@@ -114,4 +141,110 @@ body {
   word-wrap: normal;
   direction: ltr;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Mobile Hamburger Button ─────────────────────────── */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--color-secondary);
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Responsive Sidebar Overlay ─────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 99;
+  backdrop-filter: blur(4px);
+}
+
+/* ─── Tablet (≤1024px) ────────────────────────────────── */
+@media (max-width: 1024px) {
+
+  /* Tighten main content padding */
+  [style*="padding: '48px 64px'"],
+  .hrm-main {
+    padding: 32px 32px !important;
+  }
+
+  /* 4-col stat grids → 2-col */
+  [style*="gridTemplateColumns: 'repeat(4, 1fr)'"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* EmployeeInsight 2-col bottom grid → 1-col */
+  [style*="gridTemplateColumns: '1.5fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── Mobile (≤768px) ─────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Show hamburger, hide search in topbar */
+  .hamburger-btn {
+    display: flex !important;
+  }
+
+  /* Sidebar becomes a slide-in panel */
+  [class*="sidebar"],
+  [style*="width: '280px'"] {
+    position: fixed !important;
+    top: 0 !important;
+    left: -300px !important;
+    height: 100vh !important;
+    z-index: 100 !important;
+    transition: left 0.3s ease !important;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  [class*="sidebar"].open,
+  [style*="width: '280px'"].open {
+    left: 0 !important;
+  }
+
+  .sidebar-overlay.open {
+    display: block !important;
+  }
+
+  /* Main takes full width */
+  [style*="flex: 1"],
+  .hrm-main {
+    padding: 24px 16px !important;
+    width: 100% !important;
+  }
+
+  /* All multi-col grids → single column */
+  [style*="gridTemplateColumns: 'repeat(3, 1fr)'"],
+  [style*="gridTemplateColumns: 'repeat(2, 1fr)'"],
+  [style*="gridTemplateColumns: '1fr 1fr'"],
+  [style*="gridTemplateColumns: 'repeat(4, 1fr)'"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tables: make horizontally scrollable */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Cards: reduce padding */
+  [style*="padding: '32px'"] {
+    padding: 20px !important;
+  }
+
+  /* Topbar: wrap to 2 lines */
+  [style*="justifyContent: 'space-between'"][style*="paddingBottom: '32px'"] {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
 }
