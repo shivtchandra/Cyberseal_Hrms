@@ -92,15 +92,13 @@ const AdminSidebar = ({ activeTab, setActiveTab, user }) => {
                     <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
                     {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: tokens.radius.md, backgroundColor: '#F8FAFC', border: '1px solid transparent', transition: 'all 0.2s ease' }}
-                    onMouseOver={e => { e.currentTarget.style.borderColor = tokens.colors.border; e.currentTarget.style.backgroundColor = '#FFFFFF'; }}
-                    onMouseOut={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.backgroundColor = '#F8FAFC'; }}>
-                    <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #134E4A 0%, #0F766E 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#CCFBF1', fontSize: '14px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', transition: 'all 0.2s ease' }}>
+                    <div style={{ width: '40px', height: '40px', background: 'var(--color-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', color: '#FFFFFF', fontSize: '14px', borderRadius: '12px' }}>
                         {user?.email?.charAt(0)?.toUpperCase() || 'A'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '700', color: tokens.colors.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Root Admin</div>
-                        <div style={{ fontSize: '11px', color: tokens.colors.secondary }}>{user?.email || 'admin@hrmate.com'}</div>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Root Admin</div>
+                        <div style={{ fontSize: '11px', color: 'var(--color-secondary)' }}>{user?.email || 'admin@hrmate.com'}</div>
                     </div>
                 </div>
             </div>
