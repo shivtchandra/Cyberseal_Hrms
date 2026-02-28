@@ -1,58 +1,69 @@
 import React, { useState, useEffect } from 'react';
-// Firebase auth
 import { auth } from './firebase';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
-
-// router
+import { onAuthStateChanged } from 'firebase/auth';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-
-// shared styles and components
-import { globalStyles, styles } from './styles';
 import LoginForm from './components/LoginForm';
 import AuthenticatedArea from './components/AuthenticatedArea';
-import AdminPanel from './components/AdminPanel';
 
-// ---------- Main Component ----------
 function App() {
   const [user, setUser] = useState(null);
-  const [isSigningUp, setIsSigningUp] = useState(false);
-  const [activeTab, setActiveTab] = useState('employees');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // admin emails list
-  const adminEmails = ['admin@example.com'];
-  const isAdmin = user ? adminEmails.includes(user.email) : false;
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
     return unsub;
   }, []);
 
-  return (
-    <>
-      <style>{globalStyles}</style>
-      <div style={styles.app}>
-        {/* show login when not authenticated */}
-        {!user && (
-          <div style={{ flex: 1 }}>
-            <LoginForm isSigningUp={isSigningUp} onToggle={() => setIsSigningUp((s) => !s)} />
-          </div>
-        )}
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+  };
 
-        {user && (
-          <BrowserRouter>
-            <Routes>
-              <Route
-                path="/admin"
-                element={isAdmin ? <AdminPanel /> : <Navigate to="/" replace />}
-              />
-              {/* fall back to the normal authenticated UI for any other path */}
-              <Route path="/*" element={<AuthenticatedArea user={user} />} />
-            </Routes>
-          </BrowserRouter>
-        )}
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#F9FAFB' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            background: '#111827',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+          }}>
+            <span className="material-symbols-outlined" style={{ color: '#FFF', fontSize: '24px' }}>terminal</span>
+          </div>
+          <div style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>HRM_SYS</div>
+          <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`}</style>
+          <div style={{ fontSize: '14px', fontWeight: '500', color: '#6B7280' }}>Loading secure environment...</div>
+        </div>
       </div>
-    </>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public Routes */}
+        {!user ? (
+          <>
+            <Route path="/login" element={<LoginForm onLoginSuccess={handleLoginSuccess} userType="employee" />} />
+            <Route path="/admin-login" element={<LoginForm onLoginSuccess={handleLoginSuccess} userType="admin" />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </>
+        ) : (
+          <>
+            {/* Authenticated Routes */}
+            <Route path="/*" element={<AuthenticatedArea user={user} />} />
+          </>
+        )}
+      </Routes>
+    </BrowserRouter>
   );
 }
 
