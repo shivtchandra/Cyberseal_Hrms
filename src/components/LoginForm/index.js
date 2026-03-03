@@ -124,7 +124,7 @@ const LoginForm = ({ onLoginSuccess, userType = 'employee' }) => {
     }
   };
 
-  const isLocked = lockUntil && Date.now() < lockUntil;
+  const isLocked = !!lockUntil && Date.now() < lockUntil;
   const lockMins = Math.ceil(lockRemaining / 60000);
   const lockSecs = Math.floor((lockRemaining % 60000) / 1000);
 
