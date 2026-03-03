@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper Functions ──
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/user_roles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/user_roles/$(request.auth.uid)).data.roleId in ['super_admin', 'hr_admin'];
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ── Employees ──
+    match /employees/{empId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Statutory (PII — admin only) ──
+    match /employee_statutory/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Leave Requests ──
+    match /leaveRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── Attendance ──
+    match /attendance/{recordId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+    }
+
+    // ── Timesheets ──
+    match /timesheets/{sheetId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Payroll (admin/finance only) ──
+    match /payroll/{payrollId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Documents (DMS) ──
+    match /documents/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /document_versions/{versionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /document_acknowledgements/{ackId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+
+    // ── Goals & Reviews ──
+    match /goals/{goalId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /reviews/{reviewId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Training ──
+    match /training_courses/{courseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /training_enrollments/{enrollmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Assets ──
+    match /assets/{assetId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /asset_assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Exits ──
+    match /exits/{exitId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Departments & Designations ──
+    match /departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /designations/{desigId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Roles & Permissions ──
+    match /roles/{roleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /user_roles/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Audit Log (append-only) ──
+    match /auditLog/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      // No update/delete — immutable audit trail
+    }
+
+    // ── Announcements ──
+    match /announcements/{annId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Holidays ──
+    match /holidays/{holidayId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ── Notifications ──
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+    }
+  }
+}

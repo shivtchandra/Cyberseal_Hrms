@@ -3,8 +3,8 @@ import { ThemeProvider } from '../context/ThemeContext';
 import '../index.css';
 
 export const metadata = {
-    title: 'HRMate | Premium HR Management',
-    description: 'Executive HR and Workforce Management System',
+    title: 'Cyberseal HRMS | HR Governance & Compliance',
+    description: 'Cyberseal Infosec Solutions — Controlled HR Governance & Compliance System under ISMS',
 };
 
 export default function RootLayout({ children }) {

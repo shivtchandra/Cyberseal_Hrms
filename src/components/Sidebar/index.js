@@ -31,7 +31,7 @@ const Sidebar = ({ activeTab, setActiveTab, isAdmin }) => {
         }}>
           <span className="material-symbols-outlined" style={{ color: '#FFF', fontSize: '18px' }}>bolt</span>
         </div>
-        <span style={{ fontWeight: '800', letterSpacing: '-0.03em', fontSize: '22px' }}>HRMate</span>
+        <span style={{ fontWeight: '800', letterSpacing: '-0.03em', fontSize: '20px' }}>Cyberseal HRMS</span>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>

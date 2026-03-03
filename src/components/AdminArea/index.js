@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
+import { useRBAC } from '../../context/RBACContext';
 import { useTheme } from '../../context/ThemeContext';
 import { styles, tokens } from '../../styles';
 import Employees from '../Employees';
@@ -12,10 +13,18 @@ import { AdminTimesheets } from '../Timesheet';
 import { AdminPayroll } from '../Payroll';
 import NotificationBell from '../Notifications';
 import AuditLog from '../AuditLog';
+import RoleManager from '../RoleManager';
+import DeptDesignation from '../DeptDesignation';
+import DocumentManagement from '../DocumentManagement';
+import Performance from '../Performance';
+import Training from '../Training';
+import AssetManager from '../AssetManager';
+import ExitManagement from '../ExitManagement';
 
 /* ─── Admin Sidebar ──────────────────────────────── */
 const AdminSidebar = ({ activeTab, setActiveTab, user }) => {
     const { theme, toggleTheme } = useTheme();
+    const { roleName } = useRBAC();
     const primaryNav = [
         { id: 'dashboard', label: 'Overview', icon: 'grid_view' },
         { id: 'employees', label: 'Workforce Directory', icon: 'group' },
@@ -23,6 +32,10 @@ const AdminSidebar = ({ activeTab, setActiveTab, user }) => {
         { id: 'admin_attendance', label: 'Attendance Feed', icon: 'history' },
         { id: 'admin_timesheets', label: 'Timesheets', icon: 'assignment' },
         { id: 'admin_broadcast', label: 'Broadcasts', icon: 'campaign' },
+        { id: 'performance', label: 'Performance', icon: 'trending_up' },
+        { id: 'training', label: 'Training', icon: 'school' },
+        { id: 'assets', label: 'Assets', icon: 'inventory_2' },
+        { id: 'exit', label: 'Exits', icon: 'person_off' },
     ];
     const financeNav = [
         { id: 'admin_payroll', label: 'Payroll', icon: 'payments' },
@@ -30,6 +43,9 @@ const AdminSidebar = ({ activeTab, setActiveTab, user }) => {
     const configNav = [
         { id: 'admin_policies', label: 'Company Policies', icon: 'gavel' },
         { id: 'audit_log', label: 'Audit Log', icon: 'manage_search' },
+        { id: 'roles', label: 'Roles & Permissions', icon: 'admin_panel_settings' },
+        { id: 'departments', label: 'Organization Structure', icon: 'account_tree' },
+        { id: 'documents', label: 'Documents', icon: 'folder_managed' },
     ];
 
     const NavItem = ({ item }) => (
@@ -59,14 +75,14 @@ const AdminSidebar = ({ activeTab, setActiveTab, user }) => {
                 <div style={{ width: '32px', height: '32px', background: `linear-gradient(135deg, ${tokens.colors.accent} 0%, #065F46 100%)`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px -4px rgba(13,148,136,0.4)' }}>
                     <span className="material-symbols-outlined" style={{ color: '#FFF', fontSize: '18px' }}>bolt</span>
                 </div>
-                <span style={{ fontWeight: '800', letterSpacing: '-0.03em', fontSize: '22px' }}>HRMate</span>
+                <span style={{ fontWeight: '800', letterSpacing: '-0.03em', fontSize: '20px' }}>Cyberseal HRMS</span>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px' }}>
                 {/* Admin badge */}
                 <div style={{ margin: '0 16px 20px', padding: '8px 14px', borderRadius: '10px', background: 'linear-gradient(135deg, #134E4A 0%, #0F766E 100%)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '16px', color: '#5EEAD4' }}>shield_person</span>
-                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#CCFBF1', letterSpacing: '0.04em' }}>SYSTEM ADMINISTRATOR</span>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#CCFBF1', letterSpacing: '0.04em' }}>{(roleName || 'SYSTEM ADMINISTRATOR').toUpperCase()}</span>
                 </div>
 
                 <SectionLabel label="Management" />
@@ -97,7 +113,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, user }) => {
                         {user?.email?.charAt(0)?.toUpperCase() || 'A'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Root Admin</div>
+                        <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{roleName || 'Admin'}</div>
                         <div style={{ fontSize: '11px', color: 'var(--color-secondary)' }}>{user?.email || 'admin@hrmate.com'}</div>
                     </div>
                 </div>
@@ -129,6 +145,13 @@ const AdminArea = ({ user }) => {
         admin_payroll: 'Payroll Management',
         admin_policies: 'Company Policies',
         audit_log: 'Audit Log',
+        roles: 'Roles & Permissions',
+        departments: 'Organization Structure',
+        documents: 'Document Management',
+        performance: 'Performance Management',
+        training: 'Training & Compliance',
+        assets: 'Asset Management',
+        exit: 'Exit Management',
     }[activeTab] || 'Admin Panel';
 
     return (
@@ -177,6 +200,13 @@ const AdminArea = ({ user }) => {
                     {activeTab === 'admin_timesheets' && <AdminTimesheets />}
                     {activeTab === 'admin_payroll' && <AdminPayroll />}
                     {activeTab === 'audit_log' && <AuditLog />}
+                    {activeTab === 'roles' && <RoleManager adminEmail={user?.email} />}
+                    {activeTab === 'departments' && <DeptDesignation adminEmail={user?.email} />}
+                    {activeTab === 'documents' && <DocumentManagement adminEmail={user?.email} user={user} />}
+                    {activeTab === 'performance' && <Performance adminEmail={user?.email} user={user} isAdmin={true} />}
+                    {activeTab === 'training' && <Training adminEmail={user?.email} user={user} isAdmin={true} />}
+                    {activeTab === 'assets' && <AssetManager adminEmail={user?.email} />}
+                    {activeTab === 'exit' && <ExitManagement adminEmail={user?.email} />}
                     {(activeTab === 'admin_leaves' || activeTab === 'admin_attendance' || activeTab === 'admin_broadcast' || activeTab === 'admin_policies') &&
                         <AdminPanel fixedModule={activeTab.replace('admin_', '')} adminEmail={user?.email} />
                     }

@@ -297,8 +297,8 @@ self.__SERVER_FILES_MANIFEST={
     },
     "distDirRoot": ".next"
   },
-  "appDir": "/Users/shivat/Documents/help/HRMS",
-  "relativeAppDir": "Documents/help/HRMS",
+  "appDir": "/Users/shivat/Documents/hr/Hrms",
+  "relativeAppDir": "Documents/hr/Hrms",
   "files": [
     ".next/routes-manifest.json",
     ".next/server/pages-manifest.json",

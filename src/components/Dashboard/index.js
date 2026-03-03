@@ -9,6 +9,10 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
   const [announcements, setAnnouncements] = useState([]);
   const [personalAttendance, setPersonalAttendance] = useState([]);
   const [holidays, setHolidays] = useState([]);
+  const [assets, setAssets] = useState([]);
+  const [trainEnroll, setTrainEnroll] = useState([]);
+  const [exits, setExits] = useState([]);
+  const [goals, setGoals] = useState([]);
 
   useEffect(() => {
     const unsubEmp = onSnapshot(collection(db, 'employees'), s => setEmployees(s.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -18,6 +22,10 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
     });
     const unsubAnnounce = onSnapshot(collection(db, 'announcements'), s => setAnnouncements(s.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubHolidays = onSnapshot(collection(db, 'holidays'), s => setHolidays(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubAssets = onSnapshot(collection(db, 'assets'), s => setAssets(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubTrain = onSnapshot(collection(db, 'training_enrollments'), s => setTrainEnroll(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubExits = onSnapshot(collection(db, 'exits'), s => setExits(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubGoals = onSnapshot(collection(db, 'goals'), s => setGoals(s.docs.map(d => ({ id: d.id, ...d.data() }))));
 
     let unsubAtt;
     if (!isAdmin && user) {
@@ -25,7 +33,7 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
         setPersonalAttendance(s.docs.map(d => d.data()).filter(a => a.userEmail === user.email));
       });
     }
-    return () => { unsubEmp(); unsubLeave(); unsubAnnounce(); unsubHolidays(); if (unsubAtt) unsubAtt(); };
+    return () => { unsubEmp(); unsubLeave(); unsubAnnounce(); unsubHolidays(); unsubAssets(); unsubTrain(); unsubExits(); unsubGoals(); if (unsubAtt) unsubAtt(); };
   }, [isAdmin, user]);
 
   const currentUser = employees.find(e => e.email === user.email) || user;
@@ -64,6 +72,11 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
     },
   ];
 
+  const activeExits = exits.filter(e => e.status !== 'Completed').length;
+  const trainCompleted = trainEnroll.filter(e => e.status === 'Completed').length;
+  const trainTotal = trainEnroll.length;
+  const activeEmpCount = employees.filter(e => e.status !== 'Exited').length;
+
   const adminStats = [
     {
       label: 'Total Headcount',
@@ -71,6 +84,14 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
       icon: 'groups',
       color: tokens.colors.accent,
       bg: '#F0FDFA',
+      action: () => setActiveTab('employees'),
+    },
+    {
+      label: 'Active Employees',
+      value: activeEmpCount,
+      icon: 'person',
+      color: '#3B82F6',
+      bg: '#EFF6FF',
       action: () => setActiveTab('employees'),
     },
     {
@@ -82,12 +103,28 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
       action: () => setActiveTab('admin_leaves'),
     },
     {
-      label: 'Monthly Payroll',
-      value: `$${Math.round(employees.reduce((acc, cur) => acc + (Number(cur.salary) || 0), 0) / 12).toLocaleString()}`,
-      icon: 'payments',
-      color: tokens.colors.success,
-      bg: '#F0FDF4',
-      action: null,
+      label: 'Exits In Progress',
+      value: activeExits,
+      icon: 'person_off',
+      color: '#DC2626',
+      bg: '#FEF2F2',
+      action: () => setActiveTab('exit'),
+    },
+    {
+      label: 'Training Completion',
+      value: trainTotal > 0 ? `${Math.round((trainCompleted / trainTotal) * 100)}%` : '—',
+      icon: 'school',
+      color: '#7C3AED',
+      bg: '#F5F3FF',
+      action: () => setActiveTab('training'),
+    },
+    {
+      label: 'Total Assets',
+      value: assets.length,
+      icon: 'inventory_2',
+      color: '#D97706',
+      bg: '#FFFBEB',
+      action: () => setActiveTab('assets'),
     },
   ];
 
@@ -96,8 +133,12 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
   const quickLinks = isAdmin ? [
     { label: 'Workforce Directory', icon: 'group', action: () => setActiveTab('employees'), desc: 'View all employees' },
     { label: 'Leave Requests', icon: 'event_available', action: () => setActiveTab('admin_leaves'), desc: 'Pending approvals' },
-    { label: 'Attendance Feed', icon: 'history', action: () => setActiveTab('admin_attendance'), desc: 'Daily clock-in log' },
-    { label: 'Broadcasts', icon: 'campaign', action: () => setActiveTab('admin_broadcast'), desc: 'Post announcements' },
+    { label: 'Payroll', icon: 'payments', action: () => setActiveTab('admin_payroll'), desc: 'Process monthly pay' },
+    { label: 'Performance', icon: 'trending_up', action: () => setActiveTab('performance'), desc: 'Goals & reviews' },
+    { label: 'Training', icon: 'school', action: () => setActiveTab('training'), desc: 'Compliance training' },
+    { label: 'Assets', icon: 'inventory_2', action: () => setActiveTab('assets'), desc: 'Manage inventory' },
+    { label: 'Documents', icon: 'folder_managed', action: () => setActiveTab('documents'), desc: 'Policies & SOPs' },
+    { label: 'Audit Log', icon: 'manage_search', action: () => setActiveTab('audit_log'), desc: 'Activity history' },
   ] : [
     { label: 'Punch Clock', icon: 'timer', action: () => setActiveTab('attendance'), desc: 'Clock in or out' },
     { label: 'Request Leave', icon: 'event_available', action: () => setActiveTab('leaves'), desc: 'Submit time off' },
@@ -135,7 +176,7 @@ const Dashboard = ({ setActiveTab, isAdmin, user }) => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '28px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '28px' }}>
         {stats.map(s => (
           <div
             key={s.label}

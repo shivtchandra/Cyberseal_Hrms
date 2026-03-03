@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
-2:I[88817,["/_next/static/chunks/9f52611d04de3dde.js"],"ViewportBoundary"]
-3:I[88817,["/_next/static/chunks/9f52611d04de3dde.js"],"MetadataBoundary"]
+2:I[83080,["/_next/static/chunks/5282e6fdada00cc6.js"],"ViewportBoundary"]
+3:I[83080,["/_next/static/chunks/5282e6fdada00cc6.js"],"MetadataBoundary"]
 4:"$Sreact.suspense"
-0:{"buildId":"AF4W210nFAz-XBtvUEa5k","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"HRMate | Premium HR Management"}],["$","meta","1",{"name":"description","content":"Executive HR and Workforce Management System"}]]}]}]}],null]}],"loading":null,"isPartial":false}
+0:{"buildId":"hRivJ9zMdVhgV0jQgF7bf","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Cyberseal HRMS | HR Governance & Compliance"}],["$","meta","1",{"name":"description","content":"Cyberseal Infosec Solutions — Controlled HR Governance & Compliance System under ISMS"}]]}]}]}],null]}],"loading":null,"isPartial":false}

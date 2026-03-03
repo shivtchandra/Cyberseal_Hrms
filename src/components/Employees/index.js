@@ -6,27 +6,48 @@ import {
   addDoc,
   updateDoc,
   doc,
+  setDoc,
 } from 'firebase/firestore';
 import { styles, tokens } from '../../styles';
 import EmployeeInsight from './EmployeeInsight';
 import { calcSalary, formatINR, formatLPA } from '../../utils/salaryCalc';
+import { logAction } from '../../utils/auditLog';
 
 const Employees = ({ searchTerm, isAdmin }) => {
   const [employees, setEmployees] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [formData, setFormData] = useState({
     name: '', email: '', dept: '', role: '',
     ctcAnnual: '', isMetro: true, tdsMonthly: '0',
-    phone: '', address: '', dob: '', nationalId: '', password: ''
+    phone: '', address: '', dob: '', nationalId: '', password: '',
+    // New SRS fields
+    empCode: '', gender: '', personalEmail: '',
+    employmentType: 'fulltime', joiningDate: '', confirmationDate: '', exitDate: '',
+    status: 'Active',
+    emergencyContactName: '', emergencyContactPhone: '',
+    reportingManager: '',
+    city: '', state: '', pincode: '',
+    designation: '',
+  });
+  const [statutoryData, setStatutoryData] = useState({
+    pan: '', aadhaar: '', bankAccount: '', bankIfsc: '', uan: '', esiNumber: ''
   });
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'employees'), snapshot => {
+    const u1 = onSnapshot(collection(db, 'employees'), snapshot => {
       setEmployees(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-    return unsub;
+    const u2 = onSnapshot(collection(db, 'departments'), s =>
+      setDepartments(s.docs.map(d => ({ id: d.id, ...d.data() })))
+    );
+    const u3 = onSnapshot(collection(db, 'designations'), s =>
+      setDesignations(s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.level || 99) - (b.level || 99)))
+    );
+    return () => { u1(); u2(); u3(); };
   }, []);
 
   const openModal = (emp = null) => {
@@ -37,15 +58,37 @@ const Employees = ({ searchTerm, isAdmin }) => {
         dept: emp.dept || '', role: emp.role || '',
         ctcAnnual: emp.ctcAnnual || '', isMetro: emp.isMetro !== false, tdsMonthly: emp.tdsMonthly || '0',
         phone: emp.phone || '', address: emp.address || '',
-        dob: emp.dob || '', nationalId: emp.nationalId || '', password: emp.password || ''
+        dob: emp.dob || '', nationalId: emp.nationalId || '', password: emp.password || '',
+        empCode: emp.empCode || '', gender: emp.gender || '', personalEmail: emp.personalEmail || '',
+        employmentType: emp.employmentType || 'fulltime',
+        joiningDate: emp.joiningDate || emp.joinedDate || '',
+        confirmationDate: emp.confirmationDate || '', exitDate: emp.exitDate || '',
+        status: emp.status || 'Active',
+        emergencyContactName: emp.emergencyContactName || '', emergencyContactPhone: emp.emergencyContactPhone || '',
+        reportingManager: emp.reportingManager || '',
+        city: emp.city || '', state: emp.state || '', pincode: emp.pincode || '',
+        designation: emp.designation || '',
+      });
+      setStatutoryData({
+        pan: emp.pan || '', aadhaar: emp.aadhaar || '',
+        bankAccount: emp.bankAccount || '', bankIfsc: emp.bankIfsc || '',
+        uan: emp.uan || '', esiNumber: emp.esiNumber || '',
       });
     } else {
       setEditingEmployee(null);
+      const nextCode = `CS-${String(employees.length + 1).padStart(4, '0')}`;
       setFormData({
         name: '', email: '', dept: '', role: '',
         ctcAnnual: '', isMetro: true, tdsMonthly: '0',
-        phone: '', address: '', dob: '', nationalId: '', password: ''
+        phone: '', address: '', dob: '', nationalId: '', password: '',
+        empCode: nextCode, gender: '', personalEmail: '',
+        employmentType: 'fulltime', joiningDate: new Date().toISOString().split('T')[0],
+        confirmationDate: '', exitDate: '', status: 'Active',
+        emergencyContactName: '', emergencyContactPhone: '',
+        reportingManager: '', city: '', state: '', pincode: '',
+        designation: '',
       });
+      setStatutoryData({ pan: '', aadhaar: '', bankAccount: '', bankIfsc: '', uan: '', esiNumber: '' });
     }
     setShowModal(true);
   };
@@ -53,15 +96,26 @@ const Employees = ({ searchTerm, isAdmin }) => {
   const handleSave = async () => {
     if (!isAdmin) return;
     try {
+      const saveData = { ...formData };
+      // Include statutory data directly (could be encrypted in future)
+      if (statutoryData.pan) saveData.pan = statutoryData.pan;
+      if (statutoryData.aadhaar) saveData.aadhaar = statutoryData.aadhaar;
+      if (statutoryData.bankAccount) saveData.bankAccount = statutoryData.bankAccount;
+      if (statutoryData.bankIfsc) saveData.bankIfsc = statutoryData.bankIfsc;
+      if (statutoryData.uan) saveData.uan = statutoryData.uan;
+      if (statutoryData.esiNumber) saveData.esiNumber = statutoryData.esiNumber;
+
       if (editingEmployee) {
-        await updateDoc(doc(db, 'employees', editingEmployee.id), formData);
+        await updateDoc(doc(db, 'employees', editingEmployee.id), saveData);
+        await logAction('EMPLOYEE_UPDATED', { name: formData.name, email: formData.email }, 'admin');
       } else {
         await addDoc(collection(db, 'employees'), {
-          ...formData,
-          status: 'Active',
-          joinedDate: new Date().toISOString().split('T')[0],
-          profileComplete: false
+          ...saveData,
+          joinedDate: formData.joiningDate || new Date().toISOString().split('T')[0],
+          profileComplete: false,
+          createdAt: new Date().toISOString(),
         });
+        await logAction('EMPLOYEE_CREATED', { name: formData.name, email: formData.email, empCode: formData.empCode }, 'admin');
       }
       setShowModal(false);
     } catch (err) {
@@ -200,7 +254,7 @@ const Employees = ({ searchTerm, isAdmin }) => {
                   <div style={{ width: '32px', height: '32px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#fff' }}>bolt</span>
                   </div>
-                  <span style={{ color: '#fff', fontWeight: '800', fontSize: '15px', letterSpacing: '-0.01em' }}>HRMate</span>
+                  <span style={{ color: '#fff', fontWeight: '800', fontSize: '15px', letterSpacing: '-0.01em' }}>Cyberseal</span>
                 </div>
 
                 {/* Avatar / employee preview */}
@@ -236,6 +290,8 @@ const Employees = ({ searchTerm, isAdmin }) => {
                   { icon: 'passkey', label: 'Account Credentials' },
                   { icon: 'work', label: 'Work Assignment' },
                   { icon: 'lock_person', label: 'Private Details' },
+                  { icon: 'badge', label: 'Employment Lifecycle' },
+                  { icon: 'verified_user', label: 'Statutory & Compliance' },
                 ].map((step, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                     <div style={{
@@ -300,7 +356,7 @@ const Employees = ({ searchTerm, isAdmin }) => {
                     </div>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Corporate Email</label>
-                      <input style={styles.input} type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="jane@hrmate.com" />
+                      <input style={styles.input} type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="jane@cyberseal.com" />
                     </div>
                     {!editingEmployee ? (
                       <div>
@@ -313,6 +369,19 @@ const Employees = ({ searchTerm, isAdmin }) => {
                         <input style={{ ...styles.input, background: '#F8FAFC', color: tokens.colors.secondary, cursor: 'not-allowed', fontFamily: 'monospace', letterSpacing: '0.05em' }} value={editingEmployee.id.slice(0, 8).toUpperCase()} disabled />
                       </div>
                     )}
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Employee Code</label>
+                      <input style={{ ...styles.input, fontFamily: 'monospace' }} value={formData.empCode} onChange={e => setFormData({ ...formData, empCode: e.target.value })} placeholder="CS-0001" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Gender</label>
+                      <select style={styles.input} value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
+                        <option value="">Select</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -330,14 +399,31 @@ const Employees = ({ searchTerm, isAdmin }) => {
                       <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Department</label>
                       <select style={styles.input} value={formData.dept} onChange={e => setFormData({ ...formData, dept: e.target.value })}>
                         <option value="">Select Department</option>
-                        <option>Engineering</option><option>Product</option>
-                        <option>Operations</option><option>HR</option>
-                        <option>Sales</option><option>Finance</option><option>Legal</option>
+                        {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                        {departments.length === 0 && <>
+                          <option>Engineering</option><option>Product</option>
+                          <option>Operations</option><option>HR</option>
+                          <option>Sales</option><option>Finance</option><option>Legal</option>
+                        </>}
                       </select>
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Job Title</label>
-                      <input style={styles.input} value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} placeholder="e.g. Senior Engineer" />
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Designation</label>
+                      <select style={styles.input} value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })}>
+                        <option value="">Select Designation</option>
+                        {designations.map(d => <option key={d.id} value={d.name}>{d.name}{d.level ? ` (L${d.level})` : ''}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Job Title / Role</label>
+                      <input style={styles.input} value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} placeholder="e.g. Senior Security Analyst" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Reporting Manager</label>
+                      <select style={styles.input} value={formData.reportingManager} onChange={e => setFormData({ ...formData, reportingManager: e.target.value })}>
+                        <option value="">Select Manager</option>
+                        {employees.filter(e => e.id !== editingEmployee?.id).map(e => <option key={e.id} value={e.id}>{e.name} ({e.dept || 'No dept'})</option>)}
+                      </select>
                     </div>
 
                     {/* CTC Annual */}
@@ -425,7 +511,7 @@ const Employees = ({ searchTerm, isAdmin }) => {
                 <div style={{ height: '1px', background: tokens.colors.border, margin: '4px 0 24px' }} />
 
                 {/* Section: Private */}
-                <div>
+                <div style={{ marginBottom: '28px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '15px', color: tokens.colors.accent }}>lock_person</span>
                     <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: tokens.colors.accent }}>Private Details</span>
@@ -434,7 +520,11 @@ const Employees = ({ searchTerm, isAdmin }) => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Phone Number</label>
-                      <input style={styles.input} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+1 (555) 000-0000" />
+                      <input style={styles.input} value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 98765 43210" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Personal Email</label>
+                      <input style={styles.input} type="email" value={formData.personalEmail} onChange={e => setFormData({ ...formData, personalEmail: e.target.value })} placeholder="personal@gmail.com" />
                     </div>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Date of Birth</label>
@@ -442,7 +532,119 @@ const Employees = ({ searchTerm, isAdmin }) => {
                     </div>
                     <div style={{ gridColumn: 'span 2' }}>
                       <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Home Address</label>
-                      <textarea style={{ ...styles.input, minHeight: '72px', resize: 'none' }} value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Street, City, State, ZIP" />
+                      <textarea style={{ ...styles.input, minHeight: '60px', resize: 'none' }} value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Street address" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>City</label>
+                      <input style={styles.input} value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="e.g. Pune" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>State</label>
+                      <input style={styles.input} value={formData.state} onChange={e => setFormData({ ...formData, state: e.target.value })} placeholder="e.g. Maharashtra" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Pincode</label>
+                      <input style={styles.input} value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} placeholder="411001" />
+                    </div>
+                  </div>
+                  {/* Emergency Contact */}
+                  <div style={{ marginTop: '20px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, marginBottom: '10px' }}>Emergency Contact</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Contact Name</label>
+                        <input style={styles.input} value={formData.emergencyContactName} onChange={e => setFormData({ ...formData, emergencyContactName: e.target.value })} placeholder="Spouse / Parent name" />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Contact Phone</label>
+                        <input style={styles.input} value={formData.emergencyContactPhone} onChange={e => setFormData({ ...formData, emergencyContactPhone: e.target.value })} placeholder="+91 98765 43210" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height: '1px', background: tokens.colors.border, margin: '4px 0 24px' }} />
+
+                {/* Section: Employment Lifecycle */}
+                <div style={{ marginBottom: '28px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px', color: tokens.colors.accent }}>badge</span>
+                    <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: tokens.colors.accent }}>Employment Lifecycle</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Employment Type</label>
+                      <select style={styles.input} value={formData.employmentType} onChange={e => setFormData({ ...formData, employmentType: e.target.value })}>
+                        <option value="fulltime">Full-Time</option>
+                        <option value="parttime">Part-Time</option>
+                        <option value="contract">Contract</option>
+                        <option value="intern">Intern</option>
+                        <option value="ojt">OJT Trainee</option>
+                        <option value="consultant">Consultant</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Status</label>
+                      <select style={styles.input} value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
+                        <option value="Active">Active</option>
+                        <option value="Probation">Probation</option>
+                        <option value="Notice Period">Notice Period</option>
+                        <option value="Suspended">Suspended</option>
+                        <option value="Exited">Exited</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Joining Date</label>
+                      <input style={styles.input} type="date" value={formData.joiningDate} onChange={e => setFormData({ ...formData, joiningDate: e.target.value })} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Confirmation Date</label>
+                      <input style={styles.input} type="date" value={formData.confirmationDate} onChange={e => setFormData({ ...formData, confirmationDate: e.target.value })} />
+                    </div>
+                    {formData.status === 'Exited' && (
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Exit Date</label>
+                        <input style={styles.input} type="date" value={formData.exitDate} onChange={e => setFormData({ ...formData, exitDate: e.target.value })} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height: '1px', background: tokens.colors.border, margin: '4px 0 24px' }} />
+
+                {/* Section: Statutory & Compliance */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '15px', color: '#D97706' }}>verified_user</span>
+                    <span style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#D97706' }}>Statutory & Compliance</span>
+                    <span style={{ marginLeft: '4px', fontSize: '10px', color: tokens.colors.secondary, background: '#FEF3C7', padding: '2px 8px', borderRadius: '999px', fontWeight: '600' }}>PII</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>PAN Number</label>
+                      <input style={{ ...styles.input, textTransform: 'uppercase' }} value={statutoryData.pan} onChange={e => setStatutoryData({ ...statutoryData, pan: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" maxLength={10} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Aadhaar Number</label>
+                      <input style={styles.input} value={statutoryData.aadhaar} onChange={e => setStatutoryData({ ...statutoryData, aadhaar: e.target.value.replace(/\D/g, '') })} placeholder="1234 5678 9012" maxLength={12} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Bank Account No.</label>
+                      <input style={styles.input} value={statutoryData.bankAccount} onChange={e => setStatutoryData({ ...statutoryData, bankAccount: e.target.value })} placeholder="Account number" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>Bank IFSC Code</label>
+                      <input style={{ ...styles.input, textTransform: 'uppercase' }} value={statutoryData.bankIfsc} onChange={e => setStatutoryData({ ...statutoryData, bankIfsc: e.target.value.toUpperCase() })} placeholder="SBIN0001234" maxLength={11} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>UAN (PF)</label>
+                      <input style={styles.input} value={statutoryData.uan} onChange={e => setStatutoryData({ ...statutoryData, uan: e.target.value })} placeholder="Universal Account Number" />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '700', color: tokens.colors.secondary, display: 'block', marginBottom: '6px' }}>ESI Number</label>
+                      <input style={styles.input} value={statutoryData.esiNumber} onChange={e => setStatutoryData({ ...statutoryData, esiNumber: e.target.value })} placeholder="ESI number (if applicable)" />
                     </div>
                   </div>
                 </div>
@@ -484,8 +686,9 @@ const Employees = ({ searchTerm, isAdmin }) => {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 

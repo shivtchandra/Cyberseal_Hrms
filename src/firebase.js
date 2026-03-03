@@ -3,13 +3,12 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB6iiggvbRwmtNMZs-Y9SQOB7UvHBOSYLk",
-  authDomain: "hrportal-f6fe4.firebaseapp.com",
-  projectId: "hrportal-f6fe4",
-  storageBucket: "hrportal-f6fe4.firebasestorage.app",
-  messagingSenderId: "791119780476",
-  appId: "1:791119780476:web:943da5457e8c0be0e447f9",
-  measurementId: "G-XD9TN5HN9F"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 
